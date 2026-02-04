@@ -1,7 +1,18 @@
 import uuid
-from sqlalchemy import Column, String, Text, Date, Time, ForeignKey, TIMESTAMP, func
+
+from sqlalchemy import (
+    Column,
+    String,
+    Text,
+    Date,
+    Time,
+    ForeignKey,
+    TIMESTAMP,
+    func,
+)
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+    from sqlalchemy.orm import relationship
+
 from .database import Base
 
 
@@ -19,10 +30,17 @@ class UserDevice(Base):
     __tablename__ = "user_devices"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     fcm_token = Column(Text, nullable=False)
     lang = Column(String(2), nullable=False, default="ru")
+    # Время пуша по Москве
     push_time = Column(Time, nullable=False)
+    # Дата последнего отправленного пуша (NULL, если ещё не отправляли)
+    last_push_date = Column(Date, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="devices")

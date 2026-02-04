@@ -1,0 +1,24 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+.env
+backend/serviceAccountKey.json
+
+# Node / misc
+node_modules/
+
+# Flutter / Dart
+build/
+.dart_tool/
+.packages
+.pub-cache/
+pubspec.lock
+
+# Android / iOS
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# IDE
+.idea/
+.vscode/

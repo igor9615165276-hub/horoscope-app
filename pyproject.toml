@@ -1,0 +1,8 @@
+[tool.nixpacks]
+version = "1"
+
+[tool.nixpacks.plan]
+providers = ["python"]
+
+[tool.nixpacks.python]
+version = "3.11"

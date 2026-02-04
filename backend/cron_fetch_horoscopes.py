@@ -35,6 +35,11 @@ def get_db():
         db.close()
 
 
+def make_horoscope_id(sign: str, lang: str, for_date: date) -> str:
+    # Простой детерминированный ID: "Овен_ru_2026-02-04"
+    return f"{sign}_{lang}_{for_date.isoformat()}"
+
+
 def upsert_horoscope(db, sign: str, lang: str, for_date: date, text: str):
     obj = (
         db.query(Horoscope)
@@ -47,12 +52,14 @@ def upsert_horoscope(db, sign: str, lang: str, for_date: date, text: str):
     )
 
     title = f"Гороскоп на {for_date.strftime('%d.%m.%Y')}"
+    h_id = make_horoscope_id(sign, lang, for_date)
 
     if obj:
         obj.title = title
         obj.text = text
     else:
         obj = Horoscope(
+            id=h_id,
             sign=sign,
             date=for_date,
             lang=lang,

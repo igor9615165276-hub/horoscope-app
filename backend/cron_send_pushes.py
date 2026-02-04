@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 from datetime import datetime, date, time, timedelta, timezone
 
@@ -15,17 +16,30 @@ logger = logging.getLogger(__name__)
 
 
 def init_firebase():
+    # Вариант 1: локально по пути к файлу
     cred_path = os.getenv("FCM_CREDENTIALS_FILE")
-    if not cred_path:
-        raise RuntimeError("FCM_CREDENTIALS_FILE is not set")
-    if not os.path.exists(cred_path):
-        raise RuntimeError(f"FCM credentials file not found: {cred_path}")
-    cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred)
-    logger.info("Firebase Admin initialized")
+    cred_json = os.getenv("FCM_SERVICE_ACCOUNT_JSON")
+
+    if cred_path and os.path.exists(cred_path):
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
+        logger.info("Firebase Admin initialized from file")
+        return
+
+    # Вариант 2: ключ из переменной окружения (Railway, публичный репо)
+    if cred_json:
+        data = json.loads(cred_json)
+        cred = credentials.Certificate(data)
+        firebase_admin.initialize_app(cred)
+        logger.info("Firebase Admin initialized from env JSON")
+        return
+
+    raise RuntimeError(
+        "Firebase credentials not provided (FCM_CREDENTIALS_FILE or FCM_SERVICE_ACCOUNT_JSON)"
+    )
 
 
-def get_moscow_now():
+def get_moscow_now() -> datetime:
     utc_now = datetime.now(timezone.utc)
     moscow_tz = timezone(timedelta(hours=3))
     return utc_now.astimezone(moscow_tz)

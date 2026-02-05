@@ -1,4 +1,5 @@
 # backend/cron_fetch_horoscopes.py
+
 import logging
 from datetime import date
 
@@ -12,7 +13,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Технические коды знаков, как в UserSign.sign и в онбординге
+# Технические коды знаков, как в UserSign.sign и онбординге
 ZODIAC_SIGNS = [
     "aries",
     "taurus",
@@ -38,11 +39,12 @@ def get_db():
 
 
 def make_horoscope_id(sign: str, lang: str, for_date: date) -> str:
-    # Простой детерминированный ID: "aries_ru_2026-02-05"
+    """Детерминированный ID: например, 'aries_ru_2026-02-05'."""
     return f"{sign}_{lang}_{for_date.isoformat()}"
 
 
 def upsert_horoscope(db, sign: str, lang: str, for_date: date, text: str):
+    """Создать или обновить гороскоп для знака/даты/языка."""
     obj = (
         db.query(Horoscope)
         .filter(
@@ -74,6 +76,7 @@ def upsert_horoscope(db, sign: str, lang: str, for_date: date, text: str):
 
 
 def generate_all_for_today(lang: str = "ru"):
+    """Сгенерировать гороскопы на сегодняшнюю дату для всех знаков."""
     today = date.today()
     logger.info("Generating horoscopes for %s, lang=%s", today.isoformat(), lang)
 
@@ -84,8 +87,8 @@ def generate_all_for_today(lang: str = "ru"):
         for sign in ZODIAC_SIGNS:
             try:
                 logger.info("Generating horoscope for sign=%s", sign)
-                # generate_daily внутри должен генерировать текст на русском
-                text = generate_daily(sign=sign, lang=lang, date=today)
+                # ВАЖНО: параметр называется for_date, как в deepseek_client.generate_daily
+                text = generate_daily(sign=sign, lang=lang, for_date=today)
                 upsert_horoscope(db, sign=sign, lang=lang, for_date=today, text=text)
                 logger.info("Saved horoscope for %s", sign)
             except Exception as e:

@@ -29,6 +29,22 @@ ZODIAC_SIGNS = [
     "pisces",
 ]
 
+# Русские названия для заголовков
+RUSSIAN_SIGN_NAMES = {
+    "aries": "Овен",
+    "taurus": "Телец",
+    "gemini": "Близнецы",
+    "cancer": "Рак",
+    "leo": "Лев",
+    "virgo": "Дева",
+    "libra": "Весы",
+    "scorpio": "Скорпион",
+    "sagittarius": "Стрелец",
+    "capricorn": "Козерог",
+    "aquarius": "Водолей",
+    "pisces": "Рыбы",
+}
+
 
 def get_db():
     db = SessionLocal()
@@ -55,7 +71,8 @@ def upsert_horoscope(db, sign: str, lang: str, for_date: date, text: str):
         .first()
     )
 
-    title = f"Гороскоп на {for_date.strftime('%d.%m.%Y')}"
+    sign_ru = RUSSIAN_SIGN_NAMES.get(sign, sign)
+    title = f"{sign_ru}: гороскоп на {for_date.strftime('%d.%m.%Y')}"
     h_id = make_horoscope_id(sign, lang, for_date)
 
     if obj:
@@ -87,7 +104,6 @@ def generate_all_for_today(lang: str = "ru"):
         for sign in ZODIAC_SIGNS:
             try:
                 logger.info("Generating horoscope for sign=%s", sign)
-                # ВАЖНО: параметр называется for_date, как в deepseek_client.generate_daily
                 text = generate_daily(sign=sign, lang=lang, for_date=today)
                 upsert_horoscope(db, sign=sign, lang=lang, for_date=today, text=text)
                 logger.info("Saved horoscope for %s", sign)

@@ -1,3 +1,4 @@
+# backend/cron_fetch_horoscopes.py
 import logging
 from datetime import date
 
@@ -11,19 +12,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-ZODIAC_SIGNS_RU = [
-    "Овен",
-    "Телец",
-    "Близнецы",
-    "Рак",
-    "Лев",
-    "Дева",
-    "Весы",
-    "Скорпион",
-    "Стрелец",
-    "Козерог",
-    "Водолей",
-    "Рыбы",
+# Технические коды знаков, как в UserSign.sign и в онбординге
+ZODIAC_SIGNS = [
+    "aries",
+    "taurus",
+    "gemini",
+    "cancer",
+    "leo",
+    "virgo",
+    "libra",
+    "scorpio",
+    "sagittarius",
+    "capricorn",
+    "aquarius",
+    "pisces",
 ]
 
 
@@ -36,7 +38,7 @@ def get_db():
 
 
 def make_horoscope_id(sign: str, lang: str, for_date: date) -> str:
-    # Простой детерминированный ID: "Овен_ru_2026-02-04"
+    # Простой детерминированный ID: "aries_ru_2026-02-05"
     return f"{sign}_{lang}_{for_date.isoformat()}"
 
 
@@ -79,10 +81,11 @@ def generate_all_for_today(lang: str = "ru"):
     db = next(db_gen)
 
     try:
-        for sign in ZODIAC_SIGNS_RU:
+        for sign in ZODIAC_SIGNS:
             try:
                 logger.info("Generating horoscope for sign=%s", sign)
-                text = generate_daily(sign=sign, lang=lang, for_date=today)
+                # generate_daily внутри должен генерировать текст на русском
+                text = generate_daily(sign=sign, lang=lang, date=today)
                 upsert_horoscope(db, sign=sign, lang=lang, for_date=today, text=text)
                 logger.info("Saved horoscope for %s", sign)
             except Exception as e:

@@ -14,9 +14,11 @@ from firebase_admin import credentials, messaging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+MOSCOW_TZ = timezone(timedelta(hours=3))
+
 
 def init_firebase():
-    # Вариант 1: локально по пути к файлу
+    # Вариант 1: путь к файлу с ключом
     cred_path = os.getenv("FCM_CREDENTIALS_FILE")
     cred_json = os.getenv("FCM_SERVICE_ACCOUNT_JSON")
 
@@ -26,7 +28,7 @@ def init_firebase():
         logger.info("Firebase Admin initialized from file")
         return
 
-    # Вариант 2: ключ из переменной окружения (Railway, публичный репо)
+    # Вариант 2: JSON ключа в переменной окружения
     if cred_json:
         data = json.loads(cred_json)
         cred = credentials.Certificate(data)
@@ -41,11 +43,11 @@ def init_firebase():
 
 def get_moscow_now() -> datetime:
     utc_now = datetime.now(timezone.utc)
-    moscow_tz = timezone(timedelta(hours=3))
-    return utc_now.astimezone(moscow_tz)
+    return utc_now.astimezone(MOSCOW_TZ)
 
 
 def is_within_window(now_ms: datetime, target: time, window_minutes: int = 10) -> bool:
+    """Проверяем, что текущее время в окне ±window_minutes от target."""
     target_dt = datetime.combine(now_ms.date(), target, tzinfo=now_ms.tzinfo)
     delta = abs((now_ms - target_dt).total_seconds()) / 60.0
     return delta <= window_minutes
@@ -57,7 +59,7 @@ def get_user_signs(db: Session, user_id):
 
 
 def get_today_horoscopes_for_signs(db: Session, signs, lang: str):
-    today = date.today()
+    today = get_moscow_now().date()
     return (
         db.query(Horoscope)
         .filter(
@@ -105,23 +107,35 @@ def process_pushes():
     today = moscow_now.date()
     db: Session = SessionLocal()
     try:
-        target_time = time(hour=9, minute=0)
-
+        # Берём только активные устройства, которым ещё не слали сегодня
         devices = (
             db.query(UserDevice)
             .filter(
-                UserDevice.push_time == target_time,
+                UserDevice.is_active.is_(True),
+                UserDevice.fcm_token != "",
                 (UserDevice.last_push_date.is_(None) | (UserDevice.last_push_date != today)),
             )
             .all()
         )
         logger.info(f"Found {len(devices)} devices eligible for push")
 
-        if not is_within_window(moscow_now, target_time, window_minutes=10):
-            logger.info("Now is outside of push window, skipping send")
-            return
-
         for device in devices:
+            if not device.push_time:
+                continue
+
+            # ВРЕМЕННО: строгая проверка по часам и минутам
+            if (
+                moscow_now.hour != device.push_time.hour
+                or moscow_now.minute != device.push_time.minute
+            ):
+                logger.info(
+                    "Skip device %s: now=%s, push_time=%s",
+                    device.id,
+                    moscow_now.time(),
+                    device.push_time,
+                )
+                continue
+
             try:
                 signs = get_user_signs(db, device.user_id)
                 if not signs:

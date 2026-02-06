@@ -8,6 +8,7 @@ from sqlalchemy import (
     Time,
     ForeignKey,
     TIMESTAMP,
+    Boolean,
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -41,6 +42,8 @@ class UserDevice(Base):
     push_time = Column(Time, nullable=False)
     # Дата последнего отправленного пуша (NULL, если ещё не отправляли)
     last_push_date = Column(Date, nullable=True)
+    # Флаг активности пушей (колонка уже есть в БД: boolean NOT NULL DEFAULT true)
+    is_active = Column(Boolean, nullable=False, server_default="true")
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="devices")

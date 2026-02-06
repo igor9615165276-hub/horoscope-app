@@ -123,13 +123,10 @@ def process_pushes():
             if not device.push_time:
                 continue
 
-            # ВРЕМЕННО: строгая проверка по часам и минутам
-            if (
-                moscow_now.hour != device.push_time.hour
-                or moscow_now.minute != device.push_time.minute
-            ):
+            # Окно ±10 минут вокруг push_time
+            if not is_within_window(moscow_now, device.push_time, window_minutes=10):
                 logger.info(
-                    "Skip device %s: now=%s, push_time=%s",
+                    "Skip device %s: outside window (now=%s, push_time=%s)",
                     device.id,
                     moscow_now.time(),
                     device.push_time,

@@ -1,7 +1,7 @@
 # backend/cron_fetch_horoscopes.py
 
 import logging
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from .database import SessionLocal
 from .models import Horoscope
@@ -45,6 +45,8 @@ RUSSIAN_SIGN_NAMES = {
     "pisces": "Рыбы",
 }
 
+MOSCOW_TZ = timezone(timedelta(hours=3))
+
 
 def get_db():
     db = SessionLocal()
@@ -54,8 +56,15 @@ def get_db():
         db.close()
 
 
+def get_moscow_today() -> date:
+    """Сегодняшняя дата по московскому времени (UTC+3)."""
+    utc_now = datetime.now(timezone.utc)
+    moscow_now = utc_now.astimezone(MOSCOW_TZ)
+    return moscow_now.date()
+
+
 def make_horoscope_id(sign: str, lang: str, for_date: date) -> str:
-    """Детерминированный ID: например, 'aries_ru_2026-02-05'."""
+    """Детерминированный ID: например, 'aries_ru_2026-02-06'."""
     return f"{sign}_{lang}_{for_date.isoformat()}"
 
 
@@ -93,9 +102,9 @@ def upsert_horoscope(db, sign: str, lang: str, for_date: date, text: str):
 
 
 def generate_all_for_today(lang: str = "ru"):
-    """Сгенерировать гороскопы на сегодняшнюю дату для всех знаков."""
-    today = date.today()
-    logger.info("Generating horoscopes for %s, lang=%s", today.isoformat(), lang)
+    """Сгенерировать гороскопы на сегодняшнюю дату (по Москве) для всех знаков."""
+    today = get_moscow_today()
+    logger.info("Generating horoscopes for %s (Moscow date), lang=%s", today.isoformat(), lang)
 
     db_gen = get_db()
     db = next(db_gen)
@@ -112,7 +121,7 @@ def generate_all_for_today(lang: str = "ru"):
     finally:
         db_gen.close()
 
-    logger.info("Done generating horoscopes for %s", today.isoformat())
+    logger.info("Done generating horoscopes for %s (Moscow date)", today.isoformat())
 
 
 if __name__ == "__main__":

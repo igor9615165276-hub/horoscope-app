@@ -1,5 +1,8 @@
+import 'dart:js' as js;
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../firebase_options.dart';
@@ -8,35 +11,66 @@ class PushService {
   late final FirebaseMessaging _messaging;
 
   Future<void> init({GlobalKey<NavigatorState>? navigatorKey}) async {
-    // 1. Инициализируем Firebase
+    // 1. Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // 2. Берём instance только после initializeApp
-    _messaging = FirebaseMessaging.instance;
-
-    // 3. Запрашиваем разрешения на уведомления (не роняем при ошибке)
-    try {
-      await _messaging.requestPermission(alert: true, badge: true, sound: true);
-    } catch (e) {
-      debugPrint('Push permission request failed: $e');
+    // 2. Для web — сначала регистрируем service worker с правильным путём
+    if (kIsWeb) {
+      try {
+        await js.context.callMethod('navigator.serviceWorker.register', [
+          '/horoscope-app/firebase-messaging-sw.js',
+        ]);
+        debugPrint(
+          'Service worker registered: /horoscope-app/firebase-messaging-sw.js',
+        );
+      } catch (e) {
+        debugPrint('SW register failed on web: $e');
+        // Если SW не зарегистрировался — дальше смысла в web‑pushах нет
+        return;
+      }
     }
 
-    // 4. Получаем и логируем FCM-токен, но оборачиваем в try/catch
+    // 3. Берём instance после initializeApp
+    _messaging = FirebaseMessaging.instance;
+
+    // 4. Разрешения на уведомления
     try {
-      final token = await _messaging.getToken();
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      debugPrint('Push permission: ${settings.authorizationStatus}');
+      if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+          settings.authorizationStatus != AuthorizationStatus.provisional) {
+        // Нет разрешения — выходим, но не валим приложение
+        return;
+      }
+    } catch (e) {
+      debugPrint('Push permission request failed: $e');
+      // на web/iOS/Android просто не будет токена
+      return;
+    }
+
+    // 5. Получаем и логируем FCM‑токен
+    try {
+      final token = await _messaging.getToken(
+        // если используешь VAPID‑ключ для web — добавь сюда:
+        // vapidKey: 'ТВОЙ_VAPID_KEY',
+      );
       debugPrint('FCM token: $token');
     } catch (e) {
       debugPrint('Failed to get FCM token: $e');
     }
 
-    // 5. Пуши, когда приложение на экране
+    // 6. onMessage (foreground)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('onMessage: ${message.notification?.title}');
     });
 
-    // 6. Клик по пушу, когда приложение было в фоне
+    // 7. onMessageOpenedApp (из фона)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('onMessageOpenedApp: ${message.data}');
       if (navigatorKey != null && navigatorKey.currentState != null) {
@@ -44,7 +78,7 @@ class PushService {
       }
     });
 
-    // 7. Приложение открыто пушем из "убитого" состояния
+    // 8. getInitialMessage (из убитого состояния)
     try {
       final initialMessage = await FirebaseMessaging.instance
           .getInitialMessage();

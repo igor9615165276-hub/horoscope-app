@@ -1,0 +1,50 @@
+name: mobile
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Наши зависимости
+  firebase_core: ^2.30.0
+  firebase_messaging: ^14.8.0
+  shared_preferences: ^2.2.2
+  http: ^1.2.0
+  url_launcher: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/horoscope_bg_constellations.png
+    - assets/images/zodiac_aries.png
+    - assets/images/zodiac_taurus.png
+    - assets/images/zodiac_gemini.png
+    - assets/images/zodiac_cancer.png
+    - assets/images/zodiac_leo.png
+    - assets/images/zodiac_virgo.png
+    - assets/images/zodiac_libra.png
+    - assets/images/zodiac_scorpio.png
+    - assets/images/zodiac_sagittarius.png
+    - assets/images/zodiac_capricorn.png
+    - assets/images/zodiac_aquarius.png
+    - assets/images/zodiac_pisces.png
+
+flutter_launcher_icons:
+  image_path: "assets/icons/app_icon.png"
+  android: true
+  ios: true    

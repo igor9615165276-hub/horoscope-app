@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "567481575985",
+    "project_id": "horoscope-app-1c4c0",
+    "storage_bucket": "horoscope-app-1c4c0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:567481575985:android:50cd40e19a28bab34a4310",
+        "android_client_info": {
+          "package_name": "com.example.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAzg39_qXoGTS_nfR8W2KCjaToBWifstI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:567481575985:android:eaf592820aa49b124a4310",
+        "android_client_info": {
+          "package_name": "com.rodkin.horoscopetodayai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAzg39_qXoGTS_nfR8W2KCjaToBWifstI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,27 @@
+name: horoscope_yandex
+description: "Horoscope app with Yandex Ads"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Наши зависимости
+  http: ^1.2.0
+  shared_preferences: ^2.2.2
+
+  # Яндекс реклама (та же версия, что и в старом проекте)
+  yandex_mobileads: ^7.18.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0

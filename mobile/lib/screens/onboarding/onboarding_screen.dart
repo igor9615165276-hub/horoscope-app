@@ -71,18 +71,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     try {
       // Пробуем получить FCM‑токен, но не блокируем, если не удалось
       final fcmToken = await widget.pushService.getFcmToken();
-      if (fcmToken == null) {
-        debugPrint('FCM token is null, продолжаем регистрацию без него');
+      if (fcmToken == null || fcmToken.isEmpty) {
+        debugPrint(
+          'FCM token is null/empty, не отправляем его в /register_device',
+        );
       }
 
       final existingUserId = await widget.storage.getUserId();
 
-      final body = {
+      final body = <String, dynamic>{
         'user_id': existingUserId,
-        'fcm_token': fcmToken,
         'lang': 'ru',
         'push_time': '09:00',
         'signs': _selectedSignKeys.toList(),
+        // fcm_token отправляем только если он есть
+        if (fcmToken != null && fcmToken.isNotEmpty) 'fcm_token': fcmToken,
       };
 
       final response = await widget.apiClient.post(

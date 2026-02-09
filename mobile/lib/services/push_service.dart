@@ -1,3 +1,4 @@
+// ignore: deprecated_member_use
 import 'dart:js' as js;
 
 import 'package:firebase_core/firebase_core.dart';
@@ -8,36 +9,40 @@ import 'package:flutter/material.dart';
 import '../firebase_options.dart';
 
 class PushService {
-  late final FirebaseMessaging _messaging;
+  FirebaseMessaging? _messaging;
 
   Future<void> init({GlobalKey<NavigatorState>? navigatorKey}) async {
-    // 1. Firebase
+    // 1. Инициализация Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // 2. Для web — сначала регистрируем service worker с правильным путём
+    // 2. Web: попытаться зарегистрировать service worker по правильному пути
     if (kIsWeb) {
       try {
-        await js.context.callMethod('navigator.serviceWorker.register', [
-          '/horoscope-app/firebase-messaging-sw.js',
-        ]);
-        debugPrint(
-          'Service worker registered: /horoscope-app/firebase-messaging-sw.js',
-        );
+        final navigator = js.context['navigator'];
+        if (navigator == null || navigator['serviceWorker'] == null) {
+          debugPrint('Service workers are not supported in this browser');
+        } else {
+          await navigator['serviceWorker'].callMethod('register', [
+            '/horoscope-app/firebase-messaging-sw.js',
+          ]);
+          debugPrint(
+            'Service worker registered: /horoscope-app/firebase-messaging-sw.js',
+          );
+        }
       } catch (e) {
         debugPrint('SW register failed on web: $e');
-        // Если SW не зарегистрировался — дальше смысла в web‑pushах нет
-        return;
+        // Не роняем приложение, просто без web-push
       }
     }
 
-    // 3. Берём instance после initializeApp
+    // 3. Экземпляр messaging
     _messaging = FirebaseMessaging.instance;
 
-    // 4. Разрешения на уведомления
+    // 4. Запрос разрешения на уведомления
     try {
-      final settings = await _messaging.requestPermission(
+      final settings = await _messaging!.requestPermission(
         alert: true,
         badge: true,
         sound: true,
@@ -45,32 +50,30 @@ class PushService {
       debugPrint('Push permission: ${settings.authorizationStatus}');
       if (settings.authorizationStatus != AuthorizationStatus.authorized &&
           settings.authorizationStatus != AuthorizationStatus.provisional) {
-        // Нет разрешения — выходим, но не валим приложение
+        // Разрешение не выдали — дальше смысла нет
         return;
       }
     } catch (e) {
       debugPrint('Push permission request failed: $e');
-      // на web/iOS/Android просто не будет токена
       return;
     }
 
-    // 5. Получаем и логируем FCM‑токен
+    // 5. Получаем FCM-токен
     try {
-      final token = await _messaging.getToken(
-        // если используешь VAPID‑ключ для web — добавь сюда:
-        // vapidKey: 'ТВОЙ_VAPID_KEY',
+      final token = await _messaging!.getToken(
+        // vapidKey: 'ТВОЙ_VAPID_KEY' // если будешь использовать
       );
       debugPrint('FCM token: $token');
     } catch (e) {
       debugPrint('Failed to get FCM token: $e');
     }
 
-    // 6. onMessage (foreground)
+    // 6. Сообщения при активном приложении
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('onMessage: ${message.notification?.title}');
     });
 
-    // 7. onMessageOpenedApp (из фона)
+    // 7. Клик по пушу из фона
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('onMessageOpenedApp: ${message.data}');
       if (navigatorKey != null && navigatorKey.currentState != null) {
@@ -78,7 +81,7 @@ class PushService {
       }
     });
 
-    // 8. getInitialMessage (из убитого состояния)
+    // 8. Открытие приложения пушем из убитого состояния
     try {
       final initialMessage = await FirebaseMessaging.instance
           .getInitialMessage();
@@ -96,8 +99,12 @@ class PushService {
   }
 
   Future<String?> getFcmToken() async {
+    if (_messaging == null) {
+      debugPrint('getFcmToken: messaging is null');
+      return null;
+    }
     try {
-      return _messaging.getToken();
+      return _messaging!.getToken();
     } catch (e) {
       debugPrint('getFcmToken failed: $e');
       return null;

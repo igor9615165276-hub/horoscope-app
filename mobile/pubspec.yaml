@@ -20,6 +20,9 @@ dependencies:
   http: ^1.2.0
   url_launcher: ^6.3.0
 
+  connectivity_plus: ^6.0.0
+  internet_connection_checker: ^1.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -47,4 +50,4 @@ flutter:
 flutter_launcher_icons:
   image_path: "assets/icons/app_icon.png"
   android: true
-  ios: true    
+  ios: true

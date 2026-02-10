@@ -33,7 +33,7 @@ class PushService {
         }
       } catch (e) {
         debugPrint('SW register failed on web: $e');
-        // Не роняем приложение, просто без web-push
+        // Не роняем приложение, просто без web‑push
       }
     }
 
@@ -58,11 +58,17 @@ class PushService {
       return;
     }
 
-    // 5. Получаем FCM-токен
+    // 5. Получаем FCM‑токен
     try {
-      final token = await _messaging!.getToken(
-        // vapidKey: 'ТВОЙ_VAPID_KEY' // если будешь использовать
-      );
+      String? token;
+
+      if (kIsWeb) {
+        // На web не вызываем getToken, чтобы не дергать дефолтный SW Firebase
+        debugPrint('Skip getToken on web to avoid default SW registration');
+      } else {
+        token = await _messaging!.getToken();
+      }
+
       debugPrint('FCM token: $token');
     } catch (e) {
       debugPrint('Failed to get FCM token: $e');
@@ -83,8 +89,8 @@ class PushService {
 
     // 8. Открытие приложения пушем из убитого состояния
     try {
-      final initialMessage = await FirebaseMessaging.instance
-          .getInitialMessage();
+      final initialMessage =
+          await FirebaseMessaging.instance.getInitialMessage();
       if (initialMessage != null) {
         debugPrint('getInitialMessage: ${initialMessage.data}');
         if (navigatorKey != null && navigatorKey.currentState != null) {
@@ -104,6 +110,11 @@ class PushService {
       return null;
     }
     try {
+      if (kIsWeb) {
+        // На web токен сейчас не используем, чтобы не было ошибки default SW
+        debugPrint('getFcmToken: skip on web');
+        return null;
+      }
       return _messaging!.getToken();
     } catch (e) {
       debugPrint('getFcmToken failed: $e');

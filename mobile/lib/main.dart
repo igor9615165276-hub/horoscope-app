@@ -6,6 +6,7 @@ import 'core/storage.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/today/today_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'core/network_guard.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -27,13 +28,40 @@ void main() async {
   final hasUser = await storage.hasUserId();
 
   runApp(
-    MyApp(
+    RootApp(
       pushService: pushService,
       apiClient: apiClient,
       storage: storage,
       startRoute: hasUser ? '/today' : '/',
     ),
   );
+}
+
+class RootApp extends StatelessWidget {
+  final PushService pushService;
+  final ApiClient apiClient;
+  final Storage storage;
+  final String startRoute;
+
+  const RootApp({
+    super.key,
+    required this.pushService,
+    required this.apiClient,
+    required this.storage,
+    required this.startRoute,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NetworkGuard(
+      child: MyApp(
+        pushService: pushService,
+        apiClient: apiClient,
+        storage: storage,
+        startRoute: startRoute,
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -53,7 +81,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Horoscope today', // новое имя внутри Flutter
+      title: 'Horoscope today',
       navigatorKey: navigatorKey,
       routes: {
         '/': (_) => OnboardingScreen(
